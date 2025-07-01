@@ -1,0 +1,11 @@
+opencv-python
+numpy
+pandas
+joblib
+sounddevice
+mediapipe
+vosk
+sentence-transformers
+scikit-learn
+torch
+cflib
