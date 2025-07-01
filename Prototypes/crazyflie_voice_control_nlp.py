@@ -3,30 +3,21 @@ import json
 import queue
 import sounddevice as sd
 from vosk import Model, KaldiRecognizer
-
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.crazyflie.high_level_commander import HighLevelCommander
-
-# ========== SETUP ==========
-URI = 'radio://0/80/2M'  # Adjust to your Crazyflie URI
+URI = 'radio://0/80/2M'
 cflib.crtp.init_drivers()
-
-model = Model("model")  # Path to Vosk model directory
+model = Model("model")
 recognizer = KaldiRecognizer(model, 16000)
 audio_q = queue.Queue()
-
-# ========== AUDIO CALLBACK ==========
 def audio_callback(indata, frames, time, status):
     if status:
         print("Audio error:", status)
     audio_q.put(bytes(indata))
-
-# ========== INTENT RECOGNITION ==========
 def interpret_intent(text):
     text = text.lower().strip()
-
     intent_map = {
         "takeoff": ["take off", "lift off", "start flying", "launch"],
         "land": ["land", "come down", "stop flying", "touch down"],
@@ -44,19 +35,14 @@ def interpret_intent(text):
         "come here": ["come here", "come closer", "fly to me"],
         "stop": ["stop", "halt", "freeze", "land now"]
     }
-
     for intent, phrases in intent_map.items():
         if any(phrase in text for phrase in phrases):
             return intent
     return None
-
-# ========== VOICE CONTROL LOOP ==========
 def voice_control_loop(commander: HighLevelCommander):
-    print("🎙️ Ready — speak naturally. Try: 'Can you take off?', 'Come here', 'Do a jump', etc.")
-
+    print("️ Ready — speak naturally. Try: 'Can you take off?', 'Come here', 'Do a jump', etc.")
     current_pos = [0.0, 0.0, 0.5]
     step = 0.3
-
     with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype='int16',
                            channels=1, callback=audio_callback):
         while True:
@@ -66,102 +52,84 @@ def voice_control_loop(commander: HighLevelCommander):
                 text = result.get("text", "").lower()
                 if not text:
                     continue
-
-                print(f"🗣️ Heard: {text}")
+                print(f"️ Heard: {text}")
                 intent = interpret_intent(text)
-
                 if intent == "takeoff":
-                    print("✈️ Taking off...")
+                    print("️ Taking off...")
                     commander.takeoff(current_pos[2], 2.0)
                     time.sleep(3)
-
                 elif intent == "land":
-                    print("🛬 Landing...")
+                    print(" Landing...")
                     commander.land(0.0, 2.0)
                     time.sleep(3)
-
                 elif intent == "forward":
                     current_pos[1] += step
                     print("⬆️ Moving forward...")
                     commander.go_to(*current_pos, 0.0, 2.0)
-
                 elif intent == "back":
                     current_pos[1] -= step
                     print("⬇️ Moving back...")
                     commander.go_to(*current_pos, 0.0, 2.0)
-
                 elif intent == "left":
                     current_pos[0] -= step
                     print("⬅️ Moving left...")
                     commander.go_to(*current_pos, 0.0, 2.0)
-
                 elif intent == "right":
                     current_pos[0] += step
-                    print("➡️ Moving right...")
+                    print("️ Moving right...")
                     commander.go_to(*current_pos, 0.0, 2.0)
-
                 elif intent == "up":
                     current_pos[2] += step
-                    print("🔼 Moving up...")
+                    print(" Moving up...")
                     commander.go_to(*current_pos, 0.0, 2.0)
-
                 elif intent == "down":
                     current_pos[2] = max(0.1, current_pos[2] - step)
-                    print("🔽 Moving down...")
+                    print(" Moving down...")
                     commander.go_to(*current_pos, 0.0, 2.0)
-
                 elif intent == "excited":
-                    print("🤸 Excited jump!")
+                    print(" Excited jump!")
                     commander.go_to(current_pos[0], current_pos[1], current_pos[2] + 0.4, 0.0, 1.0)
                     time.sleep(1)
                     commander.go_to(current_pos[0], current_pos[1], current_pos[2], 0.0, 1.0)
                     time.sleep(1)
-
                 elif intent == "happy":
-                    print("😊 Happy wiggle!")
+                    print(" Happy wiggle!")
                     commander.go_to(current_pos[0] - 0.1, current_pos[1], current_pos[2] + 0.2, 0.0, 1.0)
                     time.sleep(1)
                     commander.go_to(current_pos[0] + 0.2, current_pos[1], current_pos[2], 0.0, 1.0)
                     time.sleep(1)
                     commander.go_to(*current_pos, 0.0, 1.0)
-
                 elif intent == "sad":
-                    print("😢 Feeling sad...")
+                    print(" Feeling sad...")
                     commander.go_to(current_pos[0], current_pos[1], max(0.2, current_pos[2] - 0.3), 0.0, 2.0)
                     time.sleep(2)
                     commander.go_to(*current_pos, 0.0, 2.0)
-
                 elif intent == "spin":
-                    print("🌀 Spinning...")
+                    print(" Spinning...")
                     commander.go_to(*current_pos, 180.0, 1.0)
                     time.sleep(1)
                     commander.go_to(*current_pos, -180.0, 1.0)
                     time.sleep(1)
                     commander.go_to(*current_pos, 0.0, 1.0)
-
                 elif intent == "shake":
-                    print("🐾 Shaking head...")
+                    print(" Shaking head...")
                     commander.go_to(*current_pos, -30.0, 0.5)
                     time.sleep(0.5)
                     commander.go_to(*current_pos, 30.0, 0.5)
                     time.sleep(0.5)
                     commander.go_to(*current_pos, 0.0, 0.5)
-
                 elif intent == "come here":
-                    print("🚶 Coming to you...")
+                    print(" Coming to you...")
                     current_pos[1] += 0.5
                     commander.go_to(*current_pos, 0.0, 2.0)
-
                 elif intent == "stop":
-                    print("🛑 Stopping and landing.")
+                    print(" Stopping and landing.")
                     commander.land(0.0, 2.0)
                     time.sleep(3)
                     break
-
-# ========== MAIN ==========
-print("🔗 Connecting to Crazyflie...")
+print(" Connecting to Crazyflie...")
 with SyncCrazyflie(URI, cf=Crazyflie(rw_cache=None)) as scf:
     commander = scf.cf.high_level_commander
-    print("✅ Connected!")
-    time.sleep(2)  # Let estimator settle
+    print(" Connected!")
+    time.sleep(2)
     voice_control_loop(commander)
