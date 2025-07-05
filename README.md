@@ -33,7 +33,7 @@ As part of a Bachelor Thesis at the Leiden Institute of Advanced Computer Scienc
 
 ## Software Requirements
 
-Python ≥ 3.8 and the following packages:
+Python = 3.10 and the following packages:
 
 ```txt
 opencv-python
