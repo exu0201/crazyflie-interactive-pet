@@ -374,6 +374,11 @@ with SyncCrazyflie(URI, cf=Crazyflie(rw_cache=None)) as scf:
                             last_action = now
                             last_interaction = now
                             current_pos, taken_off = perform_command(command, commander, current_pos, taken_off, move=distance)
+                            if command in ("happy", "sad", "excited"):
+                                mood = command
+                                print(f"Mood changed to: {mood}")
+                            elif command in ("forward", "back", "left", "right", "up", "down", "spin", "shake"):
+                                mood = "neutral"
                         else:
                             print(f"Not enough space to execute '{command}'")
 
